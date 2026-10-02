@@ -1,0 +1,16 @@
+{
+  "name": "@sendclover/sdk",
+  "version": "0.1.0",
+  "description": "Official JavaScript and TypeScript SDK for SendClover",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "sideEffects": false,
+  "files": ["dist"],
+  "scripts": { "build": "tsc -p tsconfig.json" },
+  "repository": { "type": "git", "url": "git+https://github.com/openmirai/sendclover-sdks.git", "directory": "javascript" },
+  "homepage": "https://github.com/openmirai/sendclover-sdks#readme",
+  "bugs": { "url": "https://github.com/openmirai/sendclover-sdks/issues" },
+  "devDependencies": { "typescript": "5.9.3" }
+}

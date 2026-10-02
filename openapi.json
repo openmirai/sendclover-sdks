@@ -1,0 +1,113 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "SendClover API", "version": "0.1.0", "description": "API for a self-hosted SendClover installation. Mutations retry safely only with a caller-provided stable Idempotency-Key." },
+  "servers": [{ "url": "http://localhost:3000" }],
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/v1/emails": {
+      "get": { "operationId":"listEmails", "parameters":[{"$ref":"#/components/parameters/cursor"},{"$ref":"#/components/parameters/limit"}], "responses":{"200":{"$ref":"#/components/responses/EmailPage"},"default":{"$ref":"#/components/responses/Error"}} },
+      "post": { "operationId":"sendEmail", "parameters":[{"$ref":"#/components/parameters/idempotencyKey"}], "requestBody":{"$ref":"#/components/requestBodies/EmailInput"}, "responses":{"201":{"$ref":"#/components/responses/Email"},"default":{"$ref":"#/components/responses/Error"}} }
+    },
+    "/v1/emails/batch": { "post": { "operationId":"sendEmailBatch", "parameters":[{"$ref":"#/components/parameters/idempotencyKey"}], "requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["emails"],"properties":{"emails":{"type":"array","minItems":1,"maxItems":100,"items":{"$ref":"#/components/schemas/EmailInput"}}}}}}}, "responses":{"200":{"description":"Queued emails","content":{"application/json":{"schema":{"$ref":"#/components/schemas/EmailBatch"}}}},"default":{"$ref":"#/components/responses/Error"}} } },
+    "/v1/emails/{id}": { "get": { "operationId":"getEmail", "parameters":[{"$ref":"#/components/parameters/id"}], "responses":{"200":{"$ref":"#/components/responses/Email"},"default":{"$ref":"#/components/responses/Error"}} } },
+    "/v1/templates": {
+      "get": { "operationId":"listTemplates", "parameters":[{"$ref":"#/components/parameters/cursor"},{"$ref":"#/components/parameters/limit"}], "responses":{"200":{"$ref":"#/components/responses/TemplatePage"},"default":{"$ref":"#/components/responses/Error"}} },
+      "post": { "operationId":"createTemplate", "parameters":[{"$ref":"#/components/parameters/idempotencyKey"}], "requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/TemplateInput"}}}}, "responses":{"201":{"$ref":"#/components/responses/Template"},"default":{"$ref":"#/components/responses/Error"}} }
+    },
+    "/v1/templates/{id}": {
+      "get": { "operationId":"getTemplate", "parameters":[{"$ref":"#/components/parameters/id"}], "responses":{"200":{"$ref":"#/components/responses/Template"},"default":{"$ref":"#/components/responses/Error"}} },
+      "patch": { "operationId":"updateTemplate", "parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}], "requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/TemplateInput"}}}}, "responses":{"200":{"$ref":"#/components/responses/Template"},"default":{"$ref":"#/components/responses/Error"}} },
+      "delete": { "operationId":"deleteTemplate", "parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}], "responses":{"200":{"$ref":"#/components/responses/Deleted"},"default":{"$ref":"#/components/responses/Error"}} }
+    },
+    "/v1/domains": {
+      "get": { "operationId":"listDomains", "parameters":[{"$ref":"#/components/parameters/cursor"},{"$ref":"#/components/parameters/limit"}], "responses":{"200":{"$ref":"#/components/responses/DomainPage"},"default":{"$ref":"#/components/responses/Error"}} },
+      "post": { "operationId":"createDomain", "parameters":[{"$ref":"#/components/parameters/idempotencyKey"}], "requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/DomainInput"}}}}, "responses":{"201":{"$ref":"#/components/responses/Domain"},"default":{"$ref":"#/components/responses/Error"}} }
+    },
+    "/v1/domains/{id}/verify": { "post": { "operationId":"verifyDomain", "parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}], "responses":{"200":{"$ref":"#/components/responses/Domain"},"default":{"$ref":"#/components/responses/Error"}} } },
+    "/v1/domains/{id}": {
+      "get": { "operationId":"getDomain", "parameters":[{"$ref":"#/components/parameters/id"}], "responses":{"200":{"$ref":"#/components/responses/Domain"},"default":{"$ref":"#/components/responses/Error"}} },
+      "patch": { "operationId":"updateDomain", "parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}], "requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"mailFromDomain":{"type":"string","format":"hostname"},"warmupLimit":{"type":"integer","minimum":1}}}}}}, "responses":{"200":{"$ref":"#/components/responses/Domain"},"default":{"$ref":"#/components/responses/Error"}} },
+      "delete": { "operationId":"deleteDomain", "parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}], "responses":{"200":{"$ref":"#/components/responses/Deleted"},"default":{"$ref":"#/components/responses/Error"}} }
+    },
+    "/v1/contacts": {
+      "get": { "operationId":"listContacts", "parameters":[{"$ref":"#/components/parameters/cursor"},{"$ref":"#/components/parameters/limit"}], "responses":{"200":{"$ref":"#/components/responses/ContactPage"},"default":{"$ref":"#/components/responses/Error"}} },
+      "post": { "operationId":"createContact", "parameters":[{"$ref":"#/components/parameters/idempotencyKey"}], "requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ContactInput"}}}}, "responses":{"201":{"$ref":"#/components/responses/Contact"},"default":{"$ref":"#/components/responses/Error"}} }
+    },
+    "/v1/contacts/{id}": {
+      "get": { "operationId":"getContact", "parameters":[{"$ref":"#/components/parameters/id"}], "responses":{"200":{"$ref":"#/components/responses/Contact"},"default":{"$ref":"#/components/responses/Error"}} },
+      "patch": { "operationId":"updateContact", "parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}], "requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ContactInput"}}}}, "responses":{"200":{"$ref":"#/components/responses/Contact"},"default":{"$ref":"#/components/responses/Error"}} },
+      "delete": { "operationId":"deleteContact", "parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}], "responses":{"200":{"description":"Deleted contact","content":{"application/json":{"schema":{"type":"object","required":["deleted","id"],"properties":{"deleted":{"const":true},"id":{"type":"string"}}}}}},"default":{"$ref":"#/components/responses/Error"}} }
+    },
+    "/v1/contacts/import": { "post": { "operationId":"importContacts", "parameters":[{"$ref":"#/components/parameters/idempotencyKey"}], "requestBody":{"required":true,"content":{"application/json":{"schema":{"oneOf":[{"type":"object","required":["rows"],"properties":{"rows":{"type":"array","maxItems":10000,"items":{"$ref":"#/components/schemas/ContactInput"}}}},{"type":"object","required":["csv"],"properties":{"csv":{"type":"string"}}}]}}}}, "responses":{"200":{"description":"Import result","content":{"application/json":{"schema":{"type":"object","required":["imported"],"properties":{"imported":{"type":"integer"},"data":{"type":"array","items":{"$ref":"#/components/schemas/Contact"}}}}}}},"default":{"$ref":"#/components/responses/Error"}} } },
+    "/v1/contacts/export": { "get": { "operationId":"exportContacts", "responses":{"200":{"description":"Contacts CSV","content":{"text/csv":{"schema":{"type":"string"}}}},"default":{"$ref":"#/components/responses/Error"}} } },
+    "/v1/campaigns": {
+      "get": { "operationId":"listCampaigns", "parameters":[{"$ref":"#/components/parameters/cursor"},{"$ref":"#/components/parameters/limit"}], "responses":{"200":{"$ref":"#/components/responses/CampaignPage"},"default":{"$ref":"#/components/responses/Error"}} },
+      "post": { "operationId":"createCampaign", "parameters":[{"$ref":"#/components/parameters/idempotencyKey"}], "requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CampaignInput"}}}}, "responses":{"201":{"$ref":"#/components/responses/Campaign"},"default":{"$ref":"#/components/responses/Error"}} }
+    },
+    "/v1/campaigns/{id}": {
+      "get": { "operationId":"getCampaign", "parameters":[{"$ref":"#/components/parameters/id"}], "responses":{"200":{"$ref":"#/components/responses/Campaign"},"default":{"$ref":"#/components/responses/Error"}} },
+      "patch": { "operationId":"updateCampaign", "parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}], "requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CampaignInput"}}}}, "responses":{"200":{"$ref":"#/components/responses/Campaign"},"default":{"$ref":"#/components/responses/Error"}} },
+      "delete": { "operationId":"deleteCampaign", "parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}], "responses":{"200":{"$ref":"#/components/responses/Deleted"},"default":{"$ref":"#/components/responses/Error"}} }
+    },
+    "/v1/campaigns/{id}/send": { "$ref":"#/components/pathItems/sendCampaign" },
+    "/v1/campaigns/{id}/schedule": { "$ref":"#/components/pathItems/scheduleCampaign" },
+    "/v1/campaigns/{id}/pause": { "$ref":"#/components/pathItems/pauseCampaign" },
+    "/v1/campaigns/{id}/resume": { "$ref":"#/components/pathItems/resumeCampaign" },
+    "/v1/campaigns/{id}/cancel": { "$ref":"#/components/pathItems/cancelCampaign" },
+    "/v1/campaigns/{id}/duplicate": { "$ref":"#/components/pathItems/duplicateCampaign" },
+    "/v1/campaigns/{id}/test": { "post": { "operationId":"testCampaign", "parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}], "requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["to"],"properties":{"to":{"type":"string","format":"email"}}}}}}, "responses":{"200":{"$ref":"#/components/responses/Email"},"default":{"$ref":"#/components/responses/Error"}} } }
+  },
+  "components": {
+    "securitySchemes": { "bearerAuth":{"type":"http","scheme":"bearer","description":"SendClover API key"} },
+    "parameters": {
+      "id":{"name":"id","in":"path","required":true,"schema":{"type":"string"}},
+      "cursor":{"name":"cursor","in":"query","schema":{"type":"string"}},
+      "limit":{"name":"limit","in":"query","schema":{"type":"integer","minimum":1,"maximum":100}},
+      "idempotencyKey":{"name":"Idempotency-Key","in":"header","schema":{"type":"string","minLength":1,"maxLength":256},"description":"Stable caller-generated key reused for every retry."}
+    },
+    "requestBodies": { "EmailInput":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/EmailInput"}}}} },
+    "responses": {
+      "Error":{"description":"API error","content":{"application/json":{"schema":{"type":"object","required":["error"],"properties":{"error":{"$ref":"#/components/schemas/Error"}}}}}},
+      "Deleted":{"description":"Deleted resource","content":{"application/json":{"schema":{"type":"object","required":["deleted","id"],"properties":{"deleted":{"const":true},"id":{"type":"string"}}}}}},
+      "Email":{"description":"Email","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Email"}}}},
+      "EmailPage":{"description":"Email page","content":{"application/json":{"schema":{"$ref":"#/components/schemas/EmailPage"}}}},
+      "Template":{"description":"Template","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Template"}}}},
+      "TemplatePage":{"description":"Template page","content":{"application/json":{"schema":{"$ref":"#/components/schemas/TemplatePage"}}}},
+      "Domain":{"description":"Domain","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Domain"}}}},
+      "DomainPage":{"description":"Domain page","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DomainPage"}}}},
+      "Contact":{"description":"Contact","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Contact"}}}},
+      "ContactPage":{"description":"Contact page","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ContactPage"}}}},
+      "Campaign":{"description":"Campaign","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Campaign"}}}},
+      "CampaignPage":{"description":"Campaign page","content":{"application/json":{"schema":{"$ref":"#/components/schemas/CampaignPage"}}}}
+    },
+    "schemas": {
+      "Error":{"type":"object","required":["code","message","requestId"],"properties":{"code":{"type":"string"},"message":{"type":"string"},"requestId":{"type":"string"}}},
+      "EmailStatus":{"type":"string","enum":["scheduled","queued","submitting","accepted_by_ses","delivery_delayed","delivered","bounced","rejected","failed","suppressed","cancelled","expired","uncertain"]},
+      "Attachment":{"type":"object","required":["filename","content","contentType"],"properties":{"filename":{"type":"string"},"content":{"type":"string","contentEncoding":"base64"},"contentType":{"type":"string"},"contentId":{"type":"string"}}},
+      "EmailInput":{"type":"object","required":["from","to"],"anyOf":[{"required":["templateId"]},{"required":["subject","html"]},{"required":["subject","text"]}],"properties":{"from":{"type":"string","format":"email"},"to":{"type":"string","format":"email"},"subject":{"type":"string","maxLength":998},"html":{"type":"string"},"text":{"type":"string"},"templateId":{"type":"string"},"streamId":{"type":"string"},"variables":{"type":"object"},"replyTo":{"type":"string","format":"email"},"attachments":{"type":"array","items":{"$ref":"#/components/schemas/Attachment"}},"headers":{"type":"object","additionalProperties":{"type":"string"}},"tags":{"type":"object","additionalProperties":{"type":"string"}},"metadata":{"type":"object"},"scheduledAt":{"type":"string","format":"date-time"},"expiresAt":{"type":"string","format":"date-time"},"topic":{"type":"string"}}},
+      "Email":{"type":"object","required":["id","status"],"properties":{"id":{"type":"string"},"status":{"$ref":"#/components/schemas/EmailStatus"},"fromEmail":{"type":"string"},"toEmail":{"type":"string"},"subject":{"type":"string"},"streamId":{"type":"string"},"domainId":{"type":"string"},"campaignId":{"type":["string","null"]},"contactId":{"type":["string","null"]},"scheduledAt":{"type":"integer"},"expiresAt":{"type":["integer","null"]},"createdAt":{"type":"integer"},"updatedAt":{"type":"integer"},"attempts":{"type":"integer"},"providerMessageId":{"type":["string","null"]},"lastError":{"type":["string","null"]},"timeline":{"type":"array","items":{}}}},
+      "TemplateInput":{"type":"object","required":["name","subject"],"properties":{"name":{"type":"string"},"subject":{"type":"string"},"html":{"type":"string"},"text":{"type":"string"}}},
+      "Template":{"type":"object","required":["id","name","subject"],"properties":{"id":{"type":"string"},"name":{"type":"string"},"subject":{"type":"string"},"html":{"type":"string"},"textBody":{"type":"string"},"createdAt":{"type":"integer"},"updatedAt":{"type":"integer"},"rendered":{"type":"object"},"versions":{"type":"array","items":{}}}},
+      "DomainInput":{"type":"object","required":["name"],"properties":{"name":{"type":"string","format":"hostname"},"mailFromDomain":{"type":"string","format":"hostname"}}},
+      "Domain":{"type":"object","required":["id","name","status"],"properties":{"id":{"type":"string"},"name":{"type":"string"},"status":{"type":"string"},"mailFromDomain":{"type":["string","null"]},"warmupLimit":{"type":"integer","minimum":1},"dnsRecords":{"type":"array","items":{}},"createdAt":{"type":"integer"},"updatedAt":{"type":"integer"}}},
+      "ContactInput":{"type":"object","required":["email"],"properties":{"email":{"type":"string","format":"email"},"firstName":{"type":"string"},"lastName":{"type":"string"},"properties":{"type":"object"},"tags":{"type":"array","items":{"type":"string"}},"lists":{"type":"array","items":{"type":"string"}},"subscribed":{"type":"boolean"},"consentSource":{"type":"string"},"consentAt":{"type":"string","format":"date-time"},"topics":{"type":"object","additionalProperties":{"type":"boolean"}},"preferences":{"type":"object"}}},
+      "Contact":{"type":"object","required":["id","email"],"properties":{"id":{"type":"string"},"email":{"type":"string"},"firstName":{"type":["string","null"]},"lastName":{"type":["string","null"]},"properties":{"type":"object"},"tags":{"type":"array","items":{"type":"string"}},"lists":{"type":"array","items":{"type":"string"}},"consentSource":{"type":["string","null"]},"consentAt":{"type":["integer","null"]},"preferences":{"type":"object"},"unsubscribedAt":{"type":["integer","null"]},"createdAt":{"type":"integer"},"updatedAt":{"type":"integer"}}},
+      "CampaignInput":{"type":"object","required":["name","from","streamId"],"properties":{"name":{"type":"string"},"from":{"type":"string","format":"email"},"streamId":{"type":"string"},"templateId":{"type":"string"},"subject":{"type":"string"},"html":{"type":"string"},"text":{"type":"string"},"audience":{"type":"object"},"scheduledAt":{"type":"string","format":"date-time"}}},
+      "Campaign":{"type":"object","required":["id","name","status","fromEmail","streamId"],"properties":{"id":{"type":"string"},"name":{"type":"string"},"status":{"type":"string"},"fromEmail":{"type":"string"},"streamId":{"type":"string"},"templateId":{"type":["string","null"]},"subject":{"type":"string"},"html":{"type":"string"},"textBody":{"type":"string"},"audience":{"type":"object"},"scheduledAt":{"type":["integer","null"]},"createdAt":{"type":"integer"},"updatedAt":{"type":"integer"}}},
+      "EmailBatch":{"type":"object","required":["data"],"properties":{"data":{"type":"array","items":{"$ref":"#/components/schemas/Email"}}}},
+      "EmailPage":{"type":"object","required":["data","nextCursor"],"properties":{"data":{"type":"array","items":{"$ref":"#/components/schemas/Email"}},"nextCursor":{"type":["string","null"]}}},
+      "TemplatePage":{"type":"object","required":["data","nextCursor"],"properties":{"data":{"type":"array","items":{"$ref":"#/components/schemas/Template"}},"nextCursor":{"type":["string","null"]}}},
+      "DomainPage":{"type":"object","required":["data","nextCursor"],"properties":{"data":{"type":"array","items":{"$ref":"#/components/schemas/Domain"}},"nextCursor":{"type":["string","null"]}}},
+      "ContactPage":{"type":"object","required":["data","nextCursor"],"properties":{"data":{"type":"array","items":{"$ref":"#/components/schemas/Contact"}},"nextCursor":{"type":["string","null"]}}},
+      "CampaignPage":{"type":"object","required":["data","nextCursor"],"properties":{"data":{"type":"array","items":{"$ref":"#/components/schemas/Campaign"}},"nextCursor":{"type":["string","null"]}}}
+    },
+    "pathItems": {
+      "sendCampaign":{"post":{"operationId":"sendCampaign","parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}],"responses":{"200":{"$ref":"#/components/responses/Campaign"},"default":{"$ref":"#/components/responses/Error"}}}},
+      "scheduleCampaign":{"post":{"operationId":"scheduleCampaign","parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["scheduledAt"],"properties":{"scheduledAt":{"type":"string","format":"date-time"}}}}}},"responses":{"200":{"$ref":"#/components/responses/Campaign"},"default":{"$ref":"#/components/responses/Error"}}}},
+      "pauseCampaign":{"post":{"operationId":"pauseCampaign","parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}],"responses":{"200":{"$ref":"#/components/responses/Campaign"},"default":{"$ref":"#/components/responses/Error"}}}},
+      "resumeCampaign":{"post":{"operationId":"resumeCampaign","parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}],"responses":{"200":{"$ref":"#/components/responses/Campaign"},"default":{"$ref":"#/components/responses/Error"}}}},
+      "cancelCampaign":{"post":{"operationId":"cancelCampaign","parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}],"responses":{"200":{"$ref":"#/components/responses/Campaign"},"default":{"$ref":"#/components/responses/Error"}}}},
+      "duplicateCampaign":{"post":{"operationId":"duplicateCampaign","parameters":[{"$ref":"#/components/parameters/id"},{"$ref":"#/components/parameters/idempotencyKey"}],"responses":{"200":{"$ref":"#/components/responses/Campaign"},"default":{"$ref":"#/components/responses/Error"}}}}
+    }
+  }
+}
