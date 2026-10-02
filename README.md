@@ -25,6 +25,10 @@ All list resources expose `list()` and async `pages()`. Requests accept an `Abor
 
 Domain updates accept `mailFromDomain` and a positive integer `warmupLimit`.
 
+`settings.get()` and `settings.update()` manage the current organization name, capacity, `branding`, `defaultSender`, `replyTo`, `topics`, and `customProperties`.
+
+Sending streams and projects expose create, get, paginated list, update, and delete methods. Starter streams are identified by `starter: true` and cannot be deleted.
+
 ## Go
 
 The module is hosted in the public SDK repository:
@@ -40,6 +44,13 @@ _, err = client.Emails.Send(context.Background(), sendclover.EmailInput{From: "h
 ```
 
 Go methods accept `context.Context` for cancellation and timeouts. API failures are `*sendclover.APIError`. Each list service also has `Iterate`; call `Next(ctx)` until its boolean result is false.
+
+Settings address fields use pointers so omitted fields stay unchanged and an explicit empty string clears the stored value:
+
+```go
+empty := ""
+_, err = client.Settings.Update(context.Background(), sendclover.OrganizationSettingsUpdate{DefaultSender: &empty}, nil)
+```
 
 ## Retries and webhooks
 

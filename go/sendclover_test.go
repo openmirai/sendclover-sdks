@@ -80,12 +80,44 @@ func TestContractRoutes(t *testing.T) {
 	}
 	c.Campaigns.Test(context.Background(), "campaign", "b@example.com", nil)
 	c.Domains.Update(context.Background(), "domain", DomainUpdate{MailFromDomain: "bounce.example.com", WarmupLimit: 250}, nil)
+	topics := []string{"product"}
+	properties := []CustomProperty{{Name: "plan", Type: CustomPropertyString}}
+	defaultSender := "hello@example.test"
+	c.Settings.Update(context.Background(), OrganizationSettingsUpdate{Name: "Demo organization", DefaultSender: &defaultSender, Topics: &topics, CustomProperties: &properties}, nil)
+	paused := true
+	c.Streams.Update(context.Background(), "notifications", StreamUpdate{Paused: &paused, WarmupLimit: 500}, nil)
+	c.Streams.Create(context.Background(), StreamInput{Name: "Product", Kind: StreamNotifications}, nil)
+	c.Projects.Create(context.Background(), ProjectInput{Name: "Product", Settings: map[string]any{"locale": "en"}}, nil)
 	want := []call{{"POST", "/v1/emails/batch", `{"emails":[{"from":"a@example.com","to":"b@example.com","subject":"Hi","text":"Body"}]}`}, {"POST", "/v1/contacts/import", `{"rows":[{"email":"a@example.com"}]}`}, {"GET", "/v1/contacts/export", ""}, {"POST", "/v1/campaigns/campaign/test", `{"to":"b@example.com"}`}}
 	want = append(want, call{"PATCH", "/v1/domains/domain", `{"mailFromDomain":"bounce.example.com","warmupLimit":250}`})
+	want = append(want, call{"PATCH", "/v1/settings", `{"name":"Demo organization","defaultSender":"hello@example.test","topics":["product"],"customProperties":[{"name":"plan","type":"string"}]}`})
+	want = append(want, call{"PATCH", "/v1/streams/notifications", `{"warmupLimit":500,"paused":true}`})
+	want = append(want, call{"POST", "/v1/streams", `{"name":"Product","kind":"notifications"}`})
+	want = append(want, call{"POST", "/v1/projects", `{"name":"Product","settings":{"locale":"en"}}`})
 	for i := range want {
 		if calls[i] != want[i] {
 			t.Fatalf("call %d = %#v, want %#v", i, calls[i], want[i])
 		}
+	}
+}
+
+func TestSettingsUpdateCanClearAddressesWithoutSendingUnrelatedFields(t *testing.T) {
+	var body string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		data, _ := io.ReadAll(r.Body)
+		body = string(data)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"id":"org","name":"Demo","sendRate":1,"dailyLimit":1,"authReserve":0,"settings":{},"branding":{},"defaultSender":null,"replyTo":null,"topics":[],"customProperties":[]}`))
+	}))
+	defer srv.Close()
+	c, _ := New(Config{APIKey: "test", BaseURL: srv.URL})
+	empty := ""
+	_, err := c.Settings.Update(context.Background(), OrganizationSettingsUpdate{DefaultSender: &empty, ReplyTo: &empty}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if body != `{"defaultSender":"","replyTo":""}` {
+		t.Fatalf("body = %s", body)
 	}
 }
 func TestPaginationAndTypedError(t *testing.T) {

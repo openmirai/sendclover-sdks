@@ -11,6 +11,16 @@ export interface ContactInput { email: string; firstName?: string; lastName?: st
 export interface Contact extends Omit<ContactInput, "consentAt"> { id: string; consentAt?: number; createdAt?: number; updatedAt?: number }
 export interface CampaignInput { name: string; from: string; streamId: string; templateId?: string; subject?: string; html?: string; text?: string; audience?: Record<string, unknown>; scheduledAt?: string }
 export interface Campaign { id: string; name: string; status: string; fromEmail: string; streamId: string; templateId?: string; subject?: string; html?: string; textBody?: string; audience?: Record<string, unknown>; scheduledAt?: number; createdAt?: number; updatedAt?: number }
+export interface Branding { logoUrl?: string; accentColor?: string }
+export interface CustomProperty { name: string; type: "string" | "number" | "boolean" | "date" }
+export interface OrganizationSettings { id: string; name: string; sendRate: number; dailyLimit: number; authReserve: number; settings: Record<string, unknown>; branding: Branding; defaultSender: string | null; replyTo: string | null; topics: string[]; customProperties: CustomProperty[] }
+export interface OrganizationSettingsUpdate { name?: string; sendRate?: number; dailyLimit?: number; authReserve?: number; branding?: Branding; defaultSender?: string; replyTo?: string; topics?: string[]; customProperties?: CustomProperty[] }
+export type StreamKind = "authentication" | "transactional" | "notifications" | "marketing";
+export interface StreamInput { name: string; kind: StreamKind; dailyLimit?: number; hourlyLimit?: number; warmupLimit?: number; paused?: boolean; configurationSet?: string; tenantName?: string }
+export interface StreamUpdate extends Partial<StreamInput> {}
+export interface Stream extends StreamInput { id: string; dailyLimit: number; hourlyLimit: number; warmupLimit: number; paused: boolean; starter: boolean; createdAt?: number; updatedAt?: number }
+export interface ProjectInput { name: string; settings?: Record<string, unknown> }
+export interface Project extends ProjectInput { id: string; settings: Record<string, unknown>; createdAt?: number; updatedAt?: number }
 export interface Page<T> { data: T[]; nextCursor: string | null }
 export interface BatchResult<T> { data: T[] }
 export interface ListOptions { cursor?: string; limit?: number; signal?: AbortSignal }
@@ -34,6 +44,9 @@ export class SendClover {
   readonly domains;
   readonly contacts;
   readonly campaigns;
+  readonly settings;
+  readonly streams;
+  readonly projects;
   readonly webhooks = { verify: verifyWebhook };
   private baseUrl: string;
   private timeoutMs: number;
@@ -93,6 +106,24 @@ export class SendClover {
       schedule: (id: string, scheduledAt: string, opts?: RequestOptions) => this.action<Campaign>("campaigns", id, "schedule", { scheduledAt }, opts),
       pause: campaignAction("pause"), resume: campaignAction("resume"), cancel: campaignAction("cancel"), duplicate: campaignAction("duplicate"),
       test: (id: string, to: string, opts?: RequestOptions) => this.action<Email>("campaigns", id, "test", { to }, opts)
+    };
+    this.settings = {
+      get: (opts?: RequestOptions) => this.request<OrganizationSettings>("GET", "/v1/settings", undefined, opts),
+      update: (input: OrganizationSettingsUpdate, opts?: RequestOptions) => this.request<OrganizationSettings>("PATCH", "/v1/settings", input, opts)
+    };
+    this.streams = {
+      ...listing<Stream>("streams"),
+      create: (input: StreamInput, opts?: RequestOptions) => this.request<Stream>("POST", "/v1/streams", input, opts),
+      get: (id: string, opts?: RequestOptions) => this.request<Stream>("GET", `/v1/streams/${encodeURIComponent(id)}`, undefined, opts),
+      update: (id: string, input: StreamUpdate, opts?: RequestOptions) => this.request<Stream>("PATCH", `/v1/streams/${encodeURIComponent(id)}`, input, opts),
+      delete: (id: string, opts?: RequestOptions) => this.request<{ deleted: true; id: string }>("DELETE", `/v1/streams/${encodeURIComponent(id)}`, undefined, opts)
+    };
+    this.projects = {
+      ...listing<Project>("projects"),
+      create: (input: ProjectInput, opts?: RequestOptions) => this.request<Project>("POST", "/v1/projects", input, opts),
+      get: (id: string, opts?: RequestOptions) => this.request<Project>("GET", `/v1/projects/${encodeURIComponent(id)}`, undefined, opts),
+      update: (id: string, input: Partial<ProjectInput>, opts?: RequestOptions) => this.request<Project>("PATCH", `/v1/projects/${encodeURIComponent(id)}`, input, opts),
+      delete: (id: string, opts?: RequestOptions) => this.request<{ deleted: true; id: string }>("DELETE", `/v1/projects/${encodeURIComponent(id)}`, undefined, opts)
     };
   }
 

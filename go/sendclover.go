@@ -32,6 +32,9 @@ type Client struct {
 	Domains         DomainsService
 	Contacts        ContactsService
 	Campaigns       CampaignsService
+	Settings        SettingsService
+	Streams         StreamsService
+	Projects        ProjectsService
 }
 type RequestOptions struct{ IdempotencyKey string }
 type ListOptions struct {
@@ -215,6 +218,111 @@ type TemplatesService struct{ c *Client }
 type DomainsService struct{ c *Client }
 type ContactsService struct{ c *Client }
 type CampaignsService struct{ c *Client }
+type SettingsService struct{ c *Client }
+type StreamsService struct{ c *Client }
+type ProjectsService struct{ c *Client }
+
+type Branding struct {
+	LogoURL     string `json:"logoUrl"`
+	AccentColor string `json:"accentColor"`
+}
+type CustomPropertyType string
+
+const (
+	CustomPropertyString  CustomPropertyType = "string"
+	CustomPropertyNumber  CustomPropertyType = "number"
+	CustomPropertyBoolean CustomPropertyType = "boolean"
+	CustomPropertyDate    CustomPropertyType = "date"
+)
+
+type CustomProperty struct {
+	Name string             `json:"name"`
+	Type CustomPropertyType `json:"type"`
+}
+type OrganizationSettings struct {
+	ID               string           `json:"id"`
+	Name             string           `json:"name"`
+	SendRate         int              `json:"sendRate"`
+	DailyLimit       int              `json:"dailyLimit"`
+	AuthReserve      float64          `json:"authReserve"`
+	Settings         map[string]any   `json:"settings"`
+	Branding         Branding         `json:"branding"`
+	DefaultSender    *string          `json:"defaultSender"`
+	ReplyTo          *string          `json:"replyTo"`
+	Topics           []string         `json:"topics"`
+	CustomProperties []CustomProperty `json:"customProperties"`
+}
+type OrganizationSettingsUpdate struct {
+	Name             string            `json:"name,omitempty"`
+	SendRate         int               `json:"sendRate,omitempty"`
+	DailyLimit       int               `json:"dailyLimit,omitempty"`
+	AuthReserve      *float64          `json:"authReserve,omitempty"`
+	Branding         *Branding         `json:"branding,omitempty"`
+	DefaultSender    *string           `json:"defaultSender,omitempty"`
+	ReplyTo          *string           `json:"replyTo,omitempty"`
+	Topics           *[]string         `json:"topics,omitempty"`
+	CustomProperties *[]CustomProperty `json:"customProperties,omitempty"`
+}
+
+type StreamKind string
+
+const (
+	StreamAuthentication StreamKind = "authentication"
+	StreamTransactional  StreamKind = "transactional"
+	StreamNotifications  StreamKind = "notifications"
+	StreamMarketing      StreamKind = "marketing"
+)
+
+type StreamInput struct {
+	Name             string     `json:"name"`
+	Kind             StreamKind `json:"kind"`
+	DailyLimit       int        `json:"dailyLimit,omitempty"`
+	HourlyLimit      int        `json:"hourlyLimit,omitempty"`
+	WarmupLimit      int        `json:"warmupLimit,omitempty"`
+	Paused           *bool      `json:"paused,omitempty"`
+	ConfigurationSet string     `json:"configurationSet,omitempty"`
+	TenantName       string     `json:"tenantName,omitempty"`
+}
+type StreamUpdate struct {
+	Name             string     `json:"name,omitempty"`
+	Kind             StreamKind `json:"kind,omitempty"`
+	DailyLimit       int        `json:"dailyLimit,omitempty"`
+	HourlyLimit      int        `json:"hourlyLimit,omitempty"`
+	WarmupLimit      int        `json:"warmupLimit,omitempty"`
+	Paused           *bool      `json:"paused,omitempty"`
+	ConfigurationSet string     `json:"configurationSet,omitempty"`
+	TenantName       string     `json:"tenantName,omitempty"`
+}
+type Stream struct {
+	ID               string     `json:"id"`
+	Name             string     `json:"name"`
+	Kind             StreamKind `json:"kind"`
+	DailyLimit       int        `json:"dailyLimit"`
+	HourlyLimit      int        `json:"hourlyLimit"`
+	WarmupLimit      int        `json:"warmupLimit"`
+	Paused           bool       `json:"paused"`
+	Starter          bool       `json:"starter"`
+	ConfigurationSet string     `json:"configurationSet,omitempty"`
+	TenantName       string     `json:"tenantName,omitempty"`
+	CreatedAt        int64      `json:"createdAt,omitempty"`
+	UpdatedAt        int64      `json:"updatedAt,omitempty"`
+}
+
+type ProjectInput struct {
+	Name     string         `json:"name"`
+	Settings map[string]any `json:"settings,omitempty"`
+}
+type ProjectUpdate struct {
+	Name     string         `json:"name,omitempty"`
+	Settings map[string]any `json:"settings,omitempty"`
+}
+type Project struct {
+	ID        string         `json:"id"`
+	Name      string         `json:"name"`
+	Settings  map[string]any `json:"settings"`
+	CreatedAt int64          `json:"createdAt,omitempty"`
+	UpdatedAt int64          `json:"updatedAt,omitempty"`
+}
 
 func New(config Config) (*Client, error) {
 	if config.APIKey == "" {
@@ -248,6 +356,9 @@ func New(config Config) (*Client, error) {
 	c.Domains.c = c
 	c.Contacts.c = c
 	c.Campaigns.c = c
+	c.Settings.c = c
+	c.Streams.c = c
+	c.Projects.c = c
 	return c, nil
 }
 
@@ -524,6 +635,67 @@ func (s CampaignsService) Duplicate(ctx context.Context, id string, o *RequestOp
 }
 func (s CampaignsService) Test(ctx context.Context, id, to string, o *RequestOptions) (Email, error) {
 	return action[Email](ctx, s.c, "campaigns", id, "test", map[string]any{"to": to}, o)
+}
+
+func (s SettingsService) Get(ctx context.Context) (OrganizationSettings, error) {
+	var out OrganizationSettings
+	err := s.c.do(ctx, "GET", "/v1/settings", nil, &out, nil)
+	return out, err
+}
+func (s SettingsService) Update(ctx context.Context, in OrganizationSettingsUpdate, o *RequestOptions) (OrganizationSettings, error) {
+	var out OrganizationSettings
+	err := s.c.do(ctx, "PATCH", "/v1/settings", in, &out, o)
+	return out, err
+}
+
+func (s StreamsService) Create(ctx context.Context, in StreamInput, o *RequestOptions) (Stream, error) {
+	var out Stream
+	err := s.c.do(ctx, "POST", "/v1/streams", in, &out, o)
+	return out, err
+}
+func (s StreamsService) Get(ctx context.Context, id string) (Stream, error) {
+	var out Stream
+	err := s.c.do(ctx, "GET", "/v1/streams/"+url.PathEscape(id), nil, &out, nil)
+	return out, err
+}
+func (s StreamsService) List(ctx context.Context, o ListOptions) (Page[Stream], error) {
+	return list[Stream](ctx, s.c, "/v1/streams", o)
+}
+func (s StreamsService) Iterate(o ListOptions) *Iterator[Stream] {
+	return &Iterator[Stream]{fetch: s.List, options: o}
+}
+func (s StreamsService) Update(ctx context.Context, id string, in StreamUpdate, o *RequestOptions) (Stream, error) {
+	var out Stream
+	err := s.c.do(ctx, "PATCH", "/v1/streams/"+url.PathEscape(id), in, &out, o)
+	return out, err
+}
+func (s StreamsService) Delete(ctx context.Context, id string, o *RequestOptions) error {
+	return s.c.do(ctx, "DELETE", "/v1/streams/"+url.PathEscape(id), nil, nil, o)
+}
+
+func (s ProjectsService) Create(ctx context.Context, in ProjectInput, o *RequestOptions) (Project, error) {
+	var out Project
+	err := s.c.do(ctx, "POST", "/v1/projects", in, &out, o)
+	return out, err
+}
+func (s ProjectsService) Get(ctx context.Context, id string) (Project, error) {
+	var out Project
+	err := s.c.do(ctx, "GET", "/v1/projects/"+url.PathEscape(id), nil, &out, nil)
+	return out, err
+}
+func (s ProjectsService) List(ctx context.Context, o ListOptions) (Page[Project], error) {
+	return list[Project](ctx, s.c, "/v1/projects", o)
+}
+func (s ProjectsService) Iterate(o ListOptions) *Iterator[Project] {
+	return &Iterator[Project]{fetch: s.List, options: o}
+}
+func (s ProjectsService) Update(ctx context.Context, id string, in ProjectUpdate, o *RequestOptions) (Project, error) {
+	var out Project
+	err := s.c.do(ctx, "PATCH", "/v1/projects/"+url.PathEscape(id), in, &out, o)
+	return out, err
+}
+func (s ProjectsService) Delete(ctx context.Context, id string, o *RequestOptions) error {
+	return s.c.do(ctx, "DELETE", "/v1/projects/"+url.PathEscape(id), nil, nil, o)
 }
 
 func VerifyWebhook(body []byte, headers http.Header, secret string) bool {

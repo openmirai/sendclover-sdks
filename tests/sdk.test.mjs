@@ -45,12 +45,20 @@ test("batch, contact transfer, and campaign test use the API contract", async ()
   assert.match(await client.contacts.export(), /^email/);
   await client.campaigns.test("campaign", "b@example.com");
   await client.domains.update("domain", { mailFromDomain: "bounce.example.com", warmupLimit: 250 });
+  await client.settings.update({ name: "Demo organization", defaultSender: "hello@example.test", topics: ["product"], customProperties: [{ name: "plan", type: "string" }] });
+  await client.streams.update("notifications", { paused: true, warmupLimit: 500 });
+  await client.streams.create({ name: "Product", kind: "notifications" });
+  await client.projects.create({ name: "Product", settings: { locale: "en" } });
   assert.deepEqual(calls, [
     { path: "/v1/emails/batch", method: "POST", body: { emails: [{ from: "a@example.com", to: "b@example.com", subject: "Hi", text: "Body" }] } },
     { path: "/v1/contacts/import", method: "POST", body: { rows: [{ email: "a@example.com", subscribed: true }] } },
     { path: "/v1/contacts/export", method: "GET", body: undefined },
     { path: "/v1/campaigns/campaign/test", method: "POST", body: { to: "b@example.com" } },
-    { path: "/v1/domains/domain", method: "PATCH", body: { mailFromDomain: "bounce.example.com", warmupLimit: 250 } }
+    { path: "/v1/domains/domain", method: "PATCH", body: { mailFromDomain: "bounce.example.com", warmupLimit: 250 } },
+    { path: "/v1/settings", method: "PATCH", body: { name: "Demo organization", defaultSender: "hello@example.test", topics: ["product"], customProperties: [{ name: "plan", type: "string" }] } },
+    { path: "/v1/streams/notifications", method: "PATCH", body: { paused: true, warmupLimit: 500 } },
+    { path: "/v1/streams", method: "POST", body: { name: "Product", kind: "notifications" } },
+    { path: "/v1/projects", method: "POST", body: { name: "Product", settings: { locale: "en" } } }
   ]);
 });
 
@@ -82,6 +90,6 @@ test("webhook verification checks HMAC, body, and timestamp", async () => {
 
 test("OpenAPI covers the SDK resources and actions", async () => {
   const api = JSON.parse(await readFile(new URL("../openapi.json", import.meta.url)));
-  for (const path of ["/v1/emails", "/v1/emails/batch", "/v1/templates", "/v1/domains", "/v1/domains/{id}/verify", "/v1/contacts/import", "/v1/contacts/export", "/v1/campaigns/{id}/send", "/v1/campaigns/{id}/schedule", "/v1/campaigns/{id}/pause", "/v1/campaigns/{id}/resume", "/v1/campaigns/{id}/cancel", "/v1/campaigns/{id}/duplicate", "/v1/campaigns/{id}/test"]) assert.ok(api.paths[path], path);
+  for (const path of ["/v1/emails", "/v1/emails/batch", "/v1/templates", "/v1/domains", "/v1/domains/{id}/verify", "/v1/contacts/import", "/v1/contacts/export", "/v1/campaigns/{id}/send", "/v1/campaigns/{id}/schedule", "/v1/campaigns/{id}/pause", "/v1/campaigns/{id}/resume", "/v1/campaigns/{id}/cancel", "/v1/campaigns/{id}/duplicate", "/v1/campaigns/{id}/test", "/v1/settings", "/v1/streams", "/v1/streams/{id}", "/v1/projects", "/v1/projects/{id}"]) assert.ok(api.paths[path], path);
   assert.equal(api.openapi, "3.1.0");
 });
